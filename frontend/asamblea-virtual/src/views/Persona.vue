@@ -7,8 +7,7 @@ export default {
   name: "Persona",
   components: {
     dataTableComponent,
-    TitleComponent,
-
+    TitleComponent
   },
 
   created() {
@@ -126,7 +125,7 @@ export default {
   <div class="children">
     <div id="contenido">
       <TitleComponent title="Personas" />
-      <dataTableComponent v-model="items" :fields="fields"></dataTableComponent>
+      <dataTableComponent v-model="items" :fields="fields" form="personas"></dataTableComponent>
     </div>
   </div>
 </template>

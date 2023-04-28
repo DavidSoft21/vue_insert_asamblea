@@ -301,89 +301,104 @@ export default {
   props: {
     value: Array,
     fields: Array,
+    form: "",
   },
 
   mounted() {
     document
       .getElementById("formulario_respuestas")
       .addEventListener("submit", (e) => {
-        alert("datos enviado!!!");
         e.preventDefault();
+        if (this.selected_participantes == null) {
+          alert("Selecciona un participante");
+          return false;
+        } else {
+          const arr_respuestas = [];
+          const inputs = document.querySelectorAll(".frm_respuestas");
+          const frm_id = document.getElementById("frm_id").value;
+          const url = "http://127.0.0.1:8000/api/formulario";
 
-        const arr_respuestas = [];
-        const inputs = document.querySelectorAll(".frm_respuestas");
-        const frm_id = document.getElementById("frm_id").value;
-
-        let temario_id = null;
-        const url = "http://127.0.0.1:8000/api/formulario";
-
-        inputs.forEach((element, index) => {
-          if (element.children.length > 0) {
-            if (element.children[0].checked == true) {
-              const optionsRequest = {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              };
-              const url = "http://127.0.0.1:8000/api/formulario";
-              let pregunta = element.children[0].name;
-              let pregunta_id = pregunta.substr(5, 4);
-
-              axios
-                .post(
-                  url,
-                  {
-                    persona_id: this.selected_participantes,
-                    temario_id: pregunta_id,
-                    opciones_id: element.children[0].value,
-                    formulario_detalle_id: frm_id,
+          inputs.forEach((element, index) => {
+            if (element.children.length > 0) {
+              if (element.children[0].checked == true) {
+                const url = "http://127.0.0.1:8000/api/formulario";
+                const optionsRequest = {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
                   },
-                  {
-                    headers: {
-                      "Content-Type": "multipart/form-data",
-                    },
-                  }
-                )
-                .then((res) => {
-                  console.log(res);
-                })
-                .catch((err) => {
-                  console.log(err);
-                });
-            }
-          } else {
+                };
 
-
-         
-            const url = "http://127.0.0.1:8000/api/formulario";
-            let pregunta = element.name;
-            let pregunta_id = pregunta.substr(5, 4);
-
-            axios
-              .post(
-                url,
-                {
+                let pregunta = element.children[0].name;
+                let pregunta_id = pregunta.substr(5, 4);
+                let data = {
                   persona_id: this.selected_participantes,
                   temario_id: pregunta_id,
-                  opciones_id: 6 , //id respuesta libre
-                  formulario_detalle_id: frm_id, // id formularios
-                  respuesta_libr: element.value
-                },
-                {
-                  headers: {
-                    "Content-Type": "multipart/form-data",
-                  },
+                  opciones_id: element.children[0].value,
+                  formulario_detalle_id: frm_id,
+                };
+
+                if (data.temario_id.length > 0) {
+                  axios
+                    .post(
+                      url,
+
+                      data,
+                      {
+                        headers: {
+                          "Content-Type": "multipart/form-data",
+                        },
+                      }
+                    )
+                    .then((res) => {
+                      console.log(res);
+                    })
+                    .catch((err) => {
+                      console.log(err.response);
+                    });
+
+                  // console.log("-->", data);
                 }
-              )
-              .then((res) => {
-                console.log(res);
-              })
-              .catch((err) => {
-                console.log(err);
-              });
-          }
-        });
+              }
+            } else {
+              const url = "http://127.0.0.1:8000/api/formulario";
+              let pregunta = element.name;
+              let pregunta_id = pregunta.substr(5, 4);
+              let data = {
+                persona_id: this.selected_participantes,
+                temario_id: pregunta_id,
+                opciones_id: 6, //id respuesta libre
+                formulario_detalle_id: frm_id, // id formularios
+                respuesta_libr: element.value,
+              };
+
+              if (data.temario_id.length > 0) {
+                axios
+                  .post(
+                    url,
+
+                    data,
+                    {
+                      headers: {
+                        "Content-Type": "multipart/form-data",
+                      },
+                    }
+                  )
+                  .then((res) => {
+                    console.log(res);
+                  })
+                  .catch((err) => {
+                    console.log(err.response);
+                  });
+
+                // console.log(data);
+              }
+            }
+          });
+          alert("Formulario enviado correctamente!!!");
+          location.reload();
+          return true;
+        }
       });
     this.getParticipantes();
   },
@@ -409,6 +424,22 @@ export default {
     },
     editRowHandler(data) {
       this.tableItems[data.index].isEdit = !this.tableItems[data.index].isEdit;
+      if (this.frm == "personas") {
+        const url = `http://127.0.0.1:8000/api/persona/${item.id}`;
+        console.log("URL --> ", url);
+        const optionsRequest = {
+          method: "delete",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        };
+
+        axios
+          .delete(url, optionsRequest)
+          .then((response) => console.log(response.data))
+          .catch(console.log)
+          .finally(console.log);
+      }
     },
     addRowHandler() {
       const newRow = this.fields.reduce(
@@ -434,13 +465,37 @@ export default {
         })
         .then(function () {
           console.log("SUCCESS!!");
+          location.reload();
         })
         .catch(function () {
           console.log("FAILURE!!");
+          location.reload();
         });
     },
     removeRowHandler(index) {
-      this.tableItems = this.tableItems.filter((item, i) => i !== index);
+      this.tableItems = this.tableItems.filter((item, i) => {
+        if (i !== index) {
+          return item;
+        } else {
+          if (this.frm == "personas") {
+            const url = `http://127.0.0.1:8000/api/persona/${item.id}`;
+            console.log("URL --> ", url);
+            const optionsRequest = {
+              method: "delete",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            };
+
+            axios
+              .delete(url, optionsRequest)
+              .then((response) => console.log(response.data))
+              .catch(console.log)
+              .finally(console.log);
+          }
+        }
+      });
+
       this.$emit("input", this.tableItems);
     },
     handleFileUpload() {
@@ -455,9 +510,33 @@ export default {
     removeRowsHandler() {
       const newItem = this.tableItems.filter((item) => item.isSelected);
       console.log(newItem);
-      this.tableItems = this.tableItems.filter((item) => !item.isSelected);
+      this.tableItems = this.tableItems.filter((item) => {
+        if (!item.isSelected) {
+          return item;
+        } else {
+          if (this.frm == "personas") {
+            const url = `http://127.0.0.1:8000/api/persona/${item.id}`;
+            console.log("URL --> ", url);
+            const optionsRequest = {
+              method: "delete",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            };
 
-      // this.tableItems = this.tableItems.map((item) => item.isSelected == true);
+            axios
+              .delete(url, optionsRequest)
+              .then((response) => console.log(response.data))
+              .catch(console.log)
+              .finally(console.log);
+          }
+
+          // if(){
+
+          // }
+        }
+      });
+
       this.tableItems.forEach((e) => {
         e.isSelected = false;
       });

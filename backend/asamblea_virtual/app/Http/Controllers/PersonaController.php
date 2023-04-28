@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Persona;
+use App\Models\AsambleaPersona;
+use App\Models\Formulario;
 use App\Http\Requests\PersonaCreateRequest;
 use App\Imports\PersonaImport;
 use App\Models\User;
@@ -166,9 +168,13 @@ class PersonaController extends Controller
         try {
             if (is_numeric($id)) {
                 $personas = Persona::find($id);
+                
                 if (is_null($personas)) {
                     return response()->json(['error' => true, 'La asamblea no existe!']);
                 } else {
+
+                    AsambleaPersona::where('persona_id', '=', $id)->delete();
+                    Formulario::where('persona_id', '=', $id)->delete();
                     $personas->delete();
                     return response()->json(['deleted' => true, 'eliminado!']);
                 }
